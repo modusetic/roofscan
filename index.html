@@ -901,7 +901,9 @@ function initMaps() {
 }
 
 function onMapsReady() {
-  // Autocomplete on the address input
+  // Set up autocomplete only — map is created lazily in showSatelliteMap()
+  // so it never initializes inside a display:none container (which causes the
+  // "This page can't load Google Maps correctly" error).
   const addressInput = document.getElementById('address');
   const autocomplete = new google.maps.places.Autocomplete(addressInput, {
     types: ['address'],
@@ -921,19 +923,6 @@ function onMapsReady() {
 
     showSatelliteMap(lat, lng, place.formatted_address);
   });
-
-  // Initialize the map (hidden until an address is selected)
-  gMap = new google.maps.Map(document.getElementById('satellite-map'), {
-    center: { lat: 39.5, lng: -98.35 },
-    zoom: 19,
-    mapTypeId: 'satellite',
-    tilt: 0,
-    disableDefaultUI: false,
-    zoomControl: true,
-    mapTypeControl: false,
-    streetViewControl: false,
-    fullscreenControl: true,
-  });
 }
 
 function showSatelliteMap(lat, lng, formattedAddress) {
@@ -941,22 +930,36 @@ function showSatelliteMap(lat, lng, formattedAddress) {
   const placeholder = document.getElementById('map-placeholder');
   const addressLabel = document.getElementById('map-panel-address');
 
+  // Make the div visible BEFORE creating/moving the map so Google Maps
+  // can measure its dimensions correctly.
   placeholder.style.display = 'none';
   mapEl.style.display = 'block';
   if (addressLabel) addressLabel.textContent = formattedAddress || '';
 
   const position = { lat, lng };
-  gMap.setCenter(position);
-  gMap.setZoom(19);
 
-  if (gMarker) {
-    gMarker.setPosition(position);
-  } else {
+  if (!gMap) {
+    // First call — create the map now that the container is visible
+    gMap = new google.maps.Map(mapEl, {
+      center: position,
+      zoom: 19,
+      mapTypeId: 'satellite',
+      tilt: 0,
+      zoomControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+    });
     gMarker = new google.maps.Marker({
       position,
       map: gMap,
       title: formattedAddress || 'Selected address',
     });
+  } else {
+    // Subsequent calls — re-center and move the marker
+    gMap.setCenter(position);
+    gMap.setZoom(19);
+    gMarker.setPosition(position);
   }
 }
 
