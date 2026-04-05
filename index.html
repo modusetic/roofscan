@@ -1034,56 +1034,117 @@ function generateDemoData(address) {
     sqft,
     pitch,
     segments,
-    // fake segment areas for viz
+    // fake segment areas for viz — pitchDeg matches parseSolarData field name
     segmentAreas: Array.from({length: segments}, (_, i) => ({
-      area: sqft / segments * (0.7 + Math.random() * 0.6),
-      pitch: pitch + (i * 0.5 % 3),
+      area:     sqft / segments * (0.7 + Math.random() * 0.6),
+      pitchDeg: pitch + (i * 0.5 % 3),
     }))
   };
 }
 
 function parseSolarData(solarJson, formattedAddress) {
   const stats = solarJson.solarPotential?.roofSegmentStats || [];
-  const totalArea = stats.reduce((s, seg) => s + (seg.stats?.areaMeters2 || 0), 0);
-  const sqft = totalArea * 10.7639;
-  const avgPitch = stats.length
-    ? stats.reduce((s, seg) => s + (seg.pitchDegrees || 15), 0) / stats.length
+
+  // Drop near-vertical faces (walls, dormers sides — pitch > 60°) and
+  // tiny slivers (< 2 m² ≈ 21 sq ft) which are noise, not real roof surfaces.
+  const roofable = stats.filter(seg => {
+    const area  = seg.stats?.areaMeters2 || 0;
+    const pitch = seg.pitchDegrees       || 0;
+    return area >= 2 && pitch < 60;
+  });
+
+  // Fall back to unfiltered if filtering removed everything
+  const segments = roofable.length > 0 ? roofable : stats;
+
+  const totalAreaM2 = segments.reduce((s, seg) => s + (seg.stats?.areaMeters2 || 0), 0);
+  const sqft = totalAreaM2 * 10.7639;
+
+  // Area-weighted average pitch (large flat sections shouldn't be diluted equally
+  // by small steep dormers — weight each segment by its actual area).
+  const weightedPitchDeg = totalAreaM2 > 0
+    ? segments.reduce((s, seg) => s + (seg.pitchDegrees || 15) * (seg.stats?.areaMeters2 || 0), 0) / totalAreaM2
     : 15;
-  const pitchRise = Math.round(Math.tan(avgPitch * Math.PI / 180) * 12 * 10) / 10;
+  const pitchRise = Math.round(Math.tan(weightedPitchDeg * Math.PI / 180) * 12 * 10) / 10;
 
   return {
     source: 'solar_api',
     formatted: formattedAddress,
     sqft: Math.round(sqft),
     pitch: pitchRise,
-    segments: stats.length,
-    segmentAreas: stats.map(s => ({
-      area: (s.stats?.areaMeters2 || 0) * 10.7639,
-      pitch: s.pitchDegrees || 15,
-    }))
+    segments: segments.length,
+    // Keep pitch in degrees per segment so calcCost can apply per-segment factors
+    segmentAreas: segments.map(s => ({
+      area:     (s.stats?.areaMeters2 || 0) * 10.7639,
+      pitchDeg: s.pitchDegrees || 15,
+    })),
   };
 }
 
 // ===== COST CALCULATOR =====
-function calcCost(sqft, pitch, materialKey, regionKey) {
-  const mat = MATERIALS[materialKey];
+
+// Pitch rise (x/12) → labor difficulty multiplier.
+// Based on NRCA/industry pricing tiers: steeper = slower, more dangerous, more equipment.
+function pitchMultiplier(pitchRise) {
+  if (pitchRise <= 2)  return 1.00; // flat / low-slope
+  if (pitchRise <= 4)  return 1.08; // walkable — minimal gear
+  if (pitchRise <= 6)  return 1.18; // standard residential
+  if (pitchRise <= 8)  return 1.30; // steep — toe boards required
+  if (pitchRise <= 10) return 1.45; // very steep — harness required
+  if (pitchRise <= 12) return 1.60; // extreme — specialized crew
+  return 1.75;                       // beyond 12/12
+}
+
+function calcCost(sqft, pitch, materialKey, regionKey, segmentAreas) {
+  const mat        = MATERIALS[materialKey];
   const regionMult = REGION_MULT[regionKey] || 1.0;
-  const squares = sqft / 100;
 
-  // Pitch complexity factor
-  const pitchFactor = pitch <= 4 ? 1.0 : pitch <= 7 ? 1.15 : pitch <= 9 ? 1.25 : 1.4;
+  // --- Waste factor (material cuts at hips, valleys, rakes) ---
+  // Simple gable: ~10% waste. Complex hip/multi-gable: up to 20%.
+  const segCount    = segmentAreas?.length || 1;
+  const wasteFactor = segCount <= 2 ? 1.10
+                    : segCount <= 4 ? 1.13
+                    : segCount <= 6 ? 1.16
+                    : 1.20;
 
-  const materialCost  = squares * mat.mid * 0.4 * regionMult;
-  const laborCost     = squares * mat.mid * 0.45 * regionMult * pitchFactor;
-  const tearoffCost   = squares * 35 * regionMult;
-  const underlayment  = squares * mat.mid * 0.08 * regionMult;
-  const pitchMarkup   = (pitchFactor - 1) * (materialCost + laborCost);
+  // --- Complexity factor (labor for ridges, valleys, hips, step flashing) ---
+  const complexityFactor = segCount <= 2 ? 1.00
+                         : segCount <= 4 ? 1.06
+                         : segCount <= 6 ? 1.12
+                         : 1.18;
+
+  // --- Pitch factor ---
+  // If we have per-segment data use an area-weighted average of per-segment
+  // multipliers — a small steep dormer shouldn't inflate the whole roof's labor
+  // the same way a uniformly steep roof would.
+  let weightedPitchFactor;
+  if (segmentAreas && segmentAreas.length > 0) {
+    const totalArea = segmentAreas.reduce((s, seg) => s + seg.area, 0);
+    weightedPitchFactor = segmentAreas.reduce((sum, seg) => {
+      const rise = Math.round(Math.tan(seg.pitchDeg * Math.PI / 180) * 12 * 10) / 10;
+      return sum + pitchMultiplier(rise) * (seg.area / totalArea);
+    }, 0);
+  } else {
+    weightedPitchFactor = pitchMultiplier(pitch);
+  }
+
+  const squares = (sqft * wasteFactor) / 100; // squares ordered accounts for waste
+
+  const materialCost = squares * mat.mid * 0.40 * regionMult;
+  const laborCost    = squares * mat.mid * 0.45 * regionMult * weightedPitchFactor * complexityFactor;
+  const tearoffCost  = squares * 35          * regionMult * complexityFactor;
+  const underlayment = squares * mat.mid * 0.08 * regionMult;
+  const pitchMarkup  = (weightedPitchFactor - 1) * (materialCost + laborCost);
 
   const total = materialCost + laborCost + tearoffCost + underlayment + pitchMarkup;
   const low   = total * 0.80;
   const high  = total * 1.25;
 
-  return { materialCost, laborCost, tearoffCost, underlayment, pitchMarkup, total, low, high, squares };
+  return {
+    materialCost, laborCost, tearoffCost, underlayment, pitchMarkup,
+    total, low, high,
+    squares,          // ordered squares (with waste)
+    wasteFactor, weightedPitchFactor, complexityFactor,
+  };
 }
 
 // ===== ROOF SVG VISUALIZER =====
@@ -1191,7 +1252,7 @@ function updateCosts() {
   if (!roofData) return;
   const matKey    = selectedMaterial;
   const regionKey = document.getElementById('region').value;
-  const costs     = calcCost(roofData.sqft, roofData.pitch, matKey, regionKey);
+  const costs     = calcCost(roofData.sqft, roofData.pitch, matKey, regionKey, roofData.segmentAreas);
 
   document.getElementById('m-squares').textContent  = Math.round(costs.squares);
   document.getElementById('cost-materials').textContent = fmt(costs.materialCost);
