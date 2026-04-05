@@ -496,6 +496,21 @@
     margin: 0 auto;
   }
 
+  /* MAPS AUTH ERROR BANNER */
+  .maps-auth-error {
+    background: #FFF0F0;
+    border: 1px solid rgba(196,98,45,0.3);
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.82rem;
+    color: #8B2E0D;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+    display: none;
+  }
+  .maps-auth-error.active { display: block; }
+  .maps-auth-error strong { display: block; margin-bottom: 0.25rem; }
+
   /* ERROR */
   .error-box {
     background: #FFF0F0;
@@ -659,6 +674,10 @@
 
 <div class="form-map-wrapper">
 <div class="form-card">
+  <div class="maps-auth-error" id="maps-auth-error">
+    <strong>Google Maps failed to load</strong>
+    Your API key was rejected. The most common cause is <strong>HTTP referrer restrictions</strong> — your key may not include this domain. Fix it in <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--rust);">Google Cloud Console → Credentials</a>: add <code style="font-size:0.8em;">https://your-vercel-domain.vercel.app/*</code> to the allowed referrers (or set to "None" to allow all).
+  </div>
   <div class="form-grid">
     <div class="form-group full">
       <label>Street Address</label>
@@ -863,10 +882,20 @@ function initMaps() {
   const apiKey = window.GOOGLE_MAPS_API_KEY || '';
   if (!apiKey || apiKey === 'your_google_maps_api_key_here') return;
 
+  // Called by Google Maps if the key is rejected (wrong key, referrer restriction, billing issue)
+  window.gm_authFailure = function () {
+    document.getElementById('maps-auth-error').classList.add('active');
+    // Restore the address input so the user can still type (demo mode)
+    const input = document.getElementById('address');
+    input.disabled = false;
+    input.placeholder = 'e.g. 1600 Pennsylvania Ave NW, Washington, DC';
+  };
+
   const script = document.createElement('script');
   script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=onMapsReady`;
   script.async = true;
   script.defer = true;
+  script.onerror = () => window.gm_authFailure(); // network-level failure
   document.head.appendChild(script);
 }
 
