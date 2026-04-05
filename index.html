@@ -879,7 +879,8 @@ let gMarker = null;
 
 // ===== GOOGLE MAPS — AUTOCOMPLETE + SATELLITE VIEW =====
 function initMaps() {
-  const apiKey = window.GOOGLE_MAPS_API_KEY || '';
+  // Use the dedicated browser key for Maps JS API; fall back to the main key if not set
+  const apiKey = window.GOOGLE_MAPS_BROWSER_KEY || window.GOOGLE_MAPS_API_KEY || '';
   if (!apiKey || apiKey === 'your_google_maps_api_key_here') return;
 
   // Called by Google Maps if the key is rejected (wrong key, referrer restriction, billing issue)
@@ -1363,7 +1364,8 @@ async function loadConfig() {
     const res = await fetch('/api/config');
     if (res.ok) {
       const data = await res.json();
-      if (data.apiKey) window.GOOGLE_MAPS_API_KEY = data.apiKey;
+      if (data.apiKey)    window.GOOGLE_MAPS_API_KEY    = data.apiKey;    // Solar + Geocoding
+      if (data.browserKey) window.GOOGLE_MAPS_BROWSER_KEY = data.browserKey; // Maps JS API
     }
   } catch {
     // /api/config unreachable — rely on config.js (local file:// mode)

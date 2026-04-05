@@ -5,7 +5,8 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
+const API_KEY     = process.env.GOOGLE_MAPS_API_KEY || '';
+const BROWSER_KEY = process.env.GOOGLE_MAPS_BROWSER_KEY || '';
 
 app.get('/', (req, res) => {
   let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
@@ -19,7 +20,7 @@ app.get('/', (req, res) => {
 
 // Mirror the Vercel serverless function so local dev works the same way
 app.get('/api/config', (req, res) => {
-  res.json({ apiKey: API_KEY });
+  res.json({ apiKey: API_KEY, browserKey: BROWSER_KEY || API_KEY });
 });
 
 // Serve other static assets (fonts, images, etc.) if added later
