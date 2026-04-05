@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RoofScan — Instant Roof Cost Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #F5F1E8;
+    --ink: #1A1A18;
+    --ink2: #3D3D38;
+    --ink3: #7A7A72;
+    --rust: #C4622D;
+    --rust-light: #F0E2D8;
+    --rust-pale: #FBF5F1;
+    --teal: #1A6B5A;
+    --teal-light: #D4EDDF;
+    --gold: #B8972A;
+    --gold-light: #F5EDD0;
+    --border: rgba(26,26,24,0.12);
+    --border2: rgba(26,26,24,0.22);
+    --shadow: 0 2px 16px rgba(26,26,24,0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  header {
+    padding: 2rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--cream);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--ink);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 5rem 2.5rem 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--rust);
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    color: var(--ink);
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--rust);
+  }
+
+  .hero-desc {
+    font-size: 1.05rem;
+    color: var(--ink2);
+    max-width: 520px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+
+  /* FORM */
+  .form-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: var(--shadow);
+    max-width: 900px;
+    margin: 0 auto 2rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 500;
+  }
+
+  input, select {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    background: var(--cream);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(196,98,45,0.12);
+  }
+
+  .btn-estimate {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+
+  .btn-estimate:hover { background: var(--ink2); }
+  .btn-estimate:active { transform: scale(0.99); }
+  .btn-estimate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-estimate .arrow {
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+  }
+  .btn-estimate:not(:disabled):hover .arrow { transform: translateX(4px); }
+
+  /* API NOTE */
+  .api-note {
+    background: var(--gold-light);
+    border: 1px solid rgba(184,151,42,0.3);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    color: var(--ink2);
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    line-height: 1.5;
+  }
+
+  .api-note .icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+
+  /* LOADING */
+  .loading-state {
+    display: none;
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+
+  .loading-state.active { display: block; }
+
+  .progress-bar-track {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--rust);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  .loading-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--ink3);
+    text-transform: uppercase;
+  }
+
+  /* RESULTS */
+  #results {
+    display: none;
+    max-width: 900px;
+    margin: 0 auto 4rem;
+  }
+
+  #results.active { display: block; }
+
+  .results-header {
+    padding: 0 0 2rem;
+  }
+
+  .results-address {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 0.5rem;
+  }
+
+  .results-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  /* METRIC CARDS */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .metric-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+  }
+
+  .metric-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .metric-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink3);
+    margin-top: 0.25rem;
+  }
+
+  .metric-card.accent {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+
+  .metric-card.accent .metric-label { color: rgba(255,255,255,0.5); }
+  .metric-card.accent .metric-value { color: #fff; }
+  .metric-card.accent .metric-unit { color: rgba(255,255,255,0.5); }
+
+  /* COST BREAKDOWN */
+  .breakdown-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .breakdown-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 1.5rem;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+
+  .breakdown-row .name { color: var(--ink2); }
+  .breakdown-row .amount { font-weight: 700; font-family: 'DM Mono', monospace; }
+  .breakdown-row .bar-wrap { flex: 1; margin: 0 1rem; }
+  .breakdown-row .bar {
+    height: 4px;
+    background: var(--rust-light);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .breakdown-row .bar-fill {
+    height: 100%;
+    background: var(--rust);
+    border-radius: 99px;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 1.25rem;
+    margin-top: 0.5rem;
+    border-top: 2px solid var(--ink);
+  }
+
+  .total-row .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink3);
+  }
+
+  .total-row .value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+
+  .range-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 0.3rem;
+  }
+
+  .range-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    letter-spacing: 0.04em;
+  }
+
+  .range-pill.low { background: var(--teal-light); color: var(--teal); }
+  .range-pill.high { background: var(--rust-light); color: var(--rust); }
+
+  /* MATERIAL SELECTOR */
+  .material-section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .material-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .material-option {
+    border: 1.5px solid var(--border2);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: left;
+    background: transparent;
+    font-family: 'Syne', sans-serif;
+    color: var(--ink);
+  }
+
+  .material-option:hover { background: var(--cream); }
+
+  .material-option.selected {
+    border-color: var(--rust);
+    background: var(--rust-pale);
+  }
+
+  .mat-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .mat-life {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+  }
+
+  .mat-price {
+    font-size: 0.8rem;
+    color: var(--rust);
+    font-weight: 700;
+  }
+
+  /* ROOF VIZ */
+  .viz-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  #roof-svg { max-width: 340px; margin: 0 auto; display: block; }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink3);
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    text-align: center;
+    padding: 0 2.5rem 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ERROR */
+  .error-box {
+    background: #FFF0F0;
+    border: 1px solid rgba(196,98,45,0.3);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-size: 0.82rem;
+    color: #8B2E0D;
+    margin-top: 1rem;
+    display: none;
+    line-height: 1.65;
+    word-break: break-word;
+  }
+
+  .error-box.active { display: block; }
+  .error-box .err-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.35rem; }
+  .error-box .err-tip { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgba(139,46,13,0.15); font-size: 0.75rem; opacity: 0.8; }
+
+  /* SPINNER */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--rust);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  /* FORM + MAP WRAPPER */
+  .form-map-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 1300px;
+    margin: 0 auto 2rem;
+    padding: 0 2.5rem;
+    align-items: start;
+  }
+
+  .form-map-wrapper .form-card {
+    max-width: none;
+    margin: 0;
+  }
+
+  /* MAP PANEL */
+  .map-panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    min-height: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 80px;
+  }
+
+  .map-panel-header {
+    padding: 1rem 1.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .map-panel-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+  }
+
+  .map-panel-address {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--rust);
+    margin-left: auto;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #satellite-map {
+    flex: 1;
+    min-height: 400px;
+    display: none;
+  }
+
+  .map-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem 2rem;
+    color: var(--ink3);
+    text-align: center;
+  }
+
+  .map-placeholder-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--cream);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .map-placeholder-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 900px) {
+    .form-map-wrapper {
+      grid-template-columns: 1fr;
+      padding: 0 1.5rem;
+    }
+    .map-panel {
+      position: static;
+      min-height: 320px;
+    }
+    #satellite-map { min-height: 260px; }
+  }
+
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .material-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero { padding: 3rem 1.5rem 2rem; }
+    .form-map-wrapper { padding: 0 1rem; }
+    .form-card { padding: 1.5rem; }
+    #results { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark"></div>
+  <span class="logo-text">RoofScan</span>
+  <span class="logo-sub">Powered by Google Solar API</span>
+</header>
+
+<section class="hero">
+  <div class="hero-eyebrow">Roof Replacement Estimator</div>
+  <h1>Know your roof's <em>true cost</em> — before you call anyone.</h1>
+  <p class="hero-desc">Enter any US address. We analyze satellite imagery to estimate your roof's dimensions and calculate replacement costs across materials and labor rates.</p>
+</section>
+
+<div class="form-map-wrapper">
+<div class="form-card">
+  <div class="form-grid">
+    <div class="form-group full">
+      <label>Street Address</label>
+      <input type="text" id="address" placeholder="e.g. 1600 Pennsylvania Ave NW, Washington, DC" autocomplete="off" />
+    </div>
+    <div class="form-group full" id="coords-toggle-row" style="margin-top:-0.5rem;">
+      <button type="button" onclick="toggleCoords()" id="coords-toggle-btn" style="background:none;border:none;padding:0;font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--rust);cursor:pointer;text-align:left;">
+        ▶ Skip geocoding — enter coordinates manually
+      </button>
+    </div>
+    <div id="coords-panel" style="display:none;grid-column:1/-1;display:none;">
+      <div class="form-grid" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Latitude</label>
+          <input type="text" id="lat-input" placeholder="e.g. 40.1234" />
+        </div>
+        <div class="form-group">
+          <label>Longitude</label>
+          <input type="text" id="lng-input" placeholder="e.g. -82.9876" />
+        </div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--ink3);margin-top:0.4rem;">
+        Find your coordinates: right-click your house on <a href="https://maps.google.com" target="_blank" style="color:var(--rust);">Google Maps</a> → click the lat/lng shown at top.
+        Your address: <button type="button" onclick="prefillWesterville()" style="background:none;border:none;padding:0;font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--rust);cursor:pointer;text-decoration:underline;">use 3638 Makassar Dr coords</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Roof Material</label>
+      <select id="material-select">
+        <option value="asphalt">Asphalt Shingles (3-tab)</option>
+        <option value="architectural">Architectural Shingles</option>
+        <option value="metal">Metal Roofing</option>
+        <option value="slate">Slate / Tile</option>
+        <option value="wood">Wood Shake</option>
+        <option value="tpo">TPO / Flat Roof</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Region (affects labor costs)</label>
+      <select id="region">
+        <option value="midwest">Midwest</option>
+        <option value="northeast">Northeast</option>
+        <option value="south">South / Southeast</option>
+        <option value="west">West / Pacific</option>
+        <option value="mountain">Mountain / Rocky</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn-estimate" id="estimate-btn" onclick="runEstimate()">
+    Analyze Roof <span class="arrow">→</span>
+  </button>
+
+  <div class="error-box" id="error-box"></div>
+
+</div>
+
+<!-- Map panel -->
+<div class="map-panel" id="map-panel">
+  <div class="map-panel-header">
+    <span class="map-panel-label">Satellite View</span>
+    <span class="map-panel-address" id="map-panel-address"></span>
+  </div>
+  <div id="satellite-map"></div>
+  <div class="map-placeholder" id="map-placeholder">
+    <div class="map-placeholder-icon">🛰</div>
+    <div class="map-placeholder-text">Start typing an address<br>to see the satellite view</div>
+  </div>
+</div>
+
+</div><!-- /.form-map-wrapper -->
+
+<!-- Loading -->
+<div class="form-card loading-state" id="loading-state">
+  <div class="spinner"></div>
+  <div class="loading-label" id="loading-label">Geocoding address...</div>
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="progress-bar"></div>
+  </div>
+</div>
+
+<!-- Results -->
+<div id="results">
+  <div style="padding: 0 0 2rem;">
+    <div class="results-address" id="results-address"></div>
+    <div class="results-title" id="results-title">Roof Analysis Complete</div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Total Roof Area</div>
+      <div class="metric-value" id="m-area">—</div>
+      <div class="metric-unit">sq ft</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Roofing Squares</div>
+      <div class="metric-value" id="m-squares">—</div>
+      <div class="metric-unit">100 sq ft each</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Avg Roof Pitch</div>
+      <div class="metric-value" id="m-pitch">—</div>
+      <div class="metric-unit">/ 12 rise</div>
+    </div>
+    <div class="metric-card accent">
+      <div class="metric-label">Roof Segments</div>
+      <div class="metric-value" id="m-segments">—</div>
+      <div class="metric-unit">facets detected</div>
+    </div>
+  </div>
+
+  <!-- Roof Viz -->
+  <div class="viz-card">
+    <div class="breakdown-title">Roof footprint visualization</div>
+    <svg id="roof-svg" viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <!-- Material Selector -->
+  <div class="material-section">
+    <div class="breakdown-title">Select roofing material to update estimate</div>
+    <div class="material-grid" id="material-grid"></div>
+  </div>
+
+  <!-- Cost Breakdown -->
+  <div class="breakdown-card">
+    <div class="breakdown-title">Cost breakdown</div>
+
+    <div class="breakdown-row">
+      <span class="name">Materials</span>
+      <div class="bar-wrap"><div class="bar"><div class="bar-fill" id="bar-materials" style="width:0%"></div></div></div>
+      <span class="amount" id="cost-materials">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="name">Labor</span>
+      <div class="bar-wrap"><div class="bar"><div class="bar-fill" id="bar-labor" style="width:0%"></div></div></div>
+      <span class="amount" id="cost-labor">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="name">Tear-off & Disposal</span>
+      <div class="bar-wrap"><div class="bar"><div class="bar-fill" id="bar-tearoff" style="width:0%"></div></div></div>
+      <span class="amount" id="cost-tearoff">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="name">Underlayment & Flashing</span>
+      <div class="bar-wrap"><div class="bar"><div class="bar-fill" id="bar-under" style="width:0%"></div></div></div>
+      <span class="amount" id="cost-under">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="name">Pitch Complexity Markup</span>
+      <div class="bar-wrap"><div class="bar"><div class="bar-fill" id="bar-pitch" style="width:0%"></div></div></div>
+      <span class="amount" id="cost-pitch">—</span>
+    </div>
+
+    <div class="total-row">
+      <div>
+        <div class="label">Total Estimate</div>
+        <div class="range-row" style="justify-content:flex-start; margin-top:0.4rem;">
+          <span class="range-pill low" id="cost-low">—</span>
+          <span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--ink3);align-self:center;">to</span>
+          <span class="range-pill high" id="cost-high">—</span>
+        </div>
+      </div>
+      <div class="value" id="cost-total">—</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="disclaimer" id="disclaimer" style="display:none;">
+  Estimates are based on satellite imagery analysis and regional labor averages. Actual costs may vary ±25% based on contractor, local permits, structural damage, decking condition, and material availability. Always get 3+ quotes from licensed contractors. RoofScan is not a licensed contractor and this is not a formal bid.
+</div>
+
+<script>
+// ===== MATERIALS DATABASE =====
+const MATERIALS = {
+  asphalt:      { name: 'Asphalt 3-Tab',      life: '15–20 yrs', low: 80,  mid: 100, high: 130, color: '#8B7355' },
+  architectural:{ name: 'Architectural',       life: '25–30 yrs', low: 100, mid: 135, high: 175, color: '#5A6475' },
+  metal:        { name: 'Metal',               life: '40–70 yrs', low: 200, mid: 300, high: 450, color: '#4A7B8C' },
+  slate:        { name: 'Slate / Tile',        life: '75–100 yrs',low: 400, mid: 600, high: 900, color: '#6B5E7A' },
+  wood:         { name: 'Wood Shake',          life: '20–30 yrs', low: 150, mid: 200, high: 280, color: '#8B6914' },
+  tpo:          { name: 'TPO Flat',            life: '15–25 yrs', low: 60,  mid: 90,  high: 120, color: '#4A7A5C' },
+};
+
+// Regional labor multipliers
+const REGION_MULT = {
+  midwest: 1.0,
+  south: 0.9,
+  mountain: 1.05,
+  northeast: 1.35,
+  west: 1.45,
+};
+
+let roofData = null;
+let selectedMaterial = 'architectural';
+let selectedPlace = null; // { lat, lng, formatted } — set by Places Autocomplete
+let gMap = null;
+let gMarker = null;
+
+// ===== GOOGLE MAPS — AUTOCOMPLETE + SATELLITE VIEW =====
+function initMaps() {
+  const apiKey = window.GOOGLE_MAPS_API_KEY || '';
+  if (!apiKey || apiKey === 'your_google_maps_api_key_here') return;
+
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=onMapsReady`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+}
+
+function onMapsReady() {
+  // Autocomplete on the address input
+  const addressInput = document.getElementById('address');
+  const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+    types: ['address'],
+    componentRestrictions: { country: 'us' },
+  });
+
+  // Clear selectedPlace when user edits the field manually
+  addressInput.addEventListener('input', () => { selectedPlace = null; });
+
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry || !place.geometry.location) return;
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    selectedPlace = { lat, lng, formatted: place.formatted_address };
+
+    showSatelliteMap(lat, lng, place.formatted_address);
+  });
+
+  // Initialize the map (hidden until an address is selected)
+  gMap = new google.maps.Map(document.getElementById('satellite-map'), {
+    center: { lat: 39.5, lng: -98.35 },
+    zoom: 19,
+    mapTypeId: 'satellite',
+    tilt: 0,
+    disableDefaultUI: false,
+    zoomControl: true,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: true,
+  });
+}
+
+function showSatelliteMap(lat, lng, formattedAddress) {
+  const mapEl = document.getElementById('satellite-map');
+  const placeholder = document.getElementById('map-placeholder');
+  const addressLabel = document.getElementById('map-panel-address');
+
+  placeholder.style.display = 'none';
+  mapEl.style.display = 'block';
+  if (addressLabel) addressLabel.textContent = formattedAddress || '';
+
+  const position = { lat, lng };
+  gMap.setCenter(position);
+  gMap.setZoom(19);
+
+  if (gMarker) {
+    gMarker.setPosition(position);
+  } else {
+    gMarker = new google.maps.Marker({
+      position,
+      map: gMap,
+      title: formattedAddress || 'Selected address',
+    });
+  }
+}
+
+// ===== GEOCODE + SOLAR API =====
+async function geocodeAddress(address, apiKey) {
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+  let res, data;
+  try {
+    res = await fetch(url);
+  } catch (networkErr) {
+    throw new Error(`Network error reaching Google Geocoding API. This can happen if your API key has HTTP referrer restrictions. Try removing referrer restrictions in Google Cloud Console, or use an unrestricted key for local testing. (${networkErr.message})`);
+  }
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Geocoding API returned non-JSON (HTTP ${res.status}). Your key may be invalid or the Geocoding API is not enabled.`);
+  }
+  if (data.status !== 'OK') {
+    const detail = data.error_message ? ` — ${data.error_message}` : '';
+    const hint = {
+      'REQUEST_DENIED': 'API key is invalid, missing, or the Geocoding API is not enabled in your Google Cloud project.',
+      'ZERO_RESULTS': 'No results found for that address. Try adding the city and state.',
+      'OVER_DAILY_LIMIT': 'You have exceeded your daily API quota.',
+      'OVER_QUERY_LIMIT': 'Too many requests. Please wait and try again.',
+      'INVALID_REQUEST': 'The address field was empty or malformed.',
+    }[data.status] || `Status: ${data.status}`;
+    throw new Error(`Geocoding failed — ${hint}${detail}`);
+  }
+  const loc = data.results[0].geometry.location;
+  return { lat: loc.lat, lng: loc.lng, formatted: data.results[0].formatted_address };
+}
+
+async function fetchSolarData(lat, lng, apiKey) {
+  const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=MEDIUM&key=${apiKey}`;
+  let res, data;
+  try {
+    res = await fetch(url);
+  } catch (networkErr) {
+    throw new Error(`Network error reaching Google Solar API. Check that your key has no HTTP referrer restrictions for local use. (${networkErr.message})`);
+  }
+  if (!res.ok) {
+    let errBody = '';
+    try { const j = await res.json(); errBody = j.error?.message || ''; } catch {}
+    const hint = {
+      400: 'Bad request — coordinates may be out of range.',
+      403: 'Solar API is not enabled or the key lacks permission. Enable it at console.cloud.google.com → APIs & Services → Solar API.',
+      404: 'No building found at this location. The Solar API requires a rooftop structure to be present.',
+      429: 'Quota exceeded. Check your billing and quota limits.',
+    }[res.status] || `HTTP ${res.status}`;
+    throw new Error(`Solar API error — ${hint}${errBody ? ': ' + errBody : ''}`);
+  }
+  data = await res.json();
+  if (!data.solarPotential) {
+    throw new Error('Solar API returned a response but no roof data was found. The building may not have solar data coverage yet. Try the demo mode instead.');
+  }
+  return data;
+}
+
+// ===== DEMO DATA GENERATOR =====
+function generateDemoData(address) {
+  // Seed a pseudo-random number from address characters
+  let seed = 0;
+  for (let c of address) seed += c.charCodeAt(0);
+  const rng = (min, max) => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return min + (Math.abs(seed) % (max - min + 1)); };
+
+  const sqft = rng(1200, 3800);
+  const pitch = rng(3, 10);
+  const segments = rng(2, 7);
+
+  return {
+    source: 'demo',
+    formatted: address,
+    sqft,
+    pitch,
+    segments,
+    // fake segment areas for viz
+    segmentAreas: Array.from({length: segments}, (_, i) => ({
+      area: sqft / segments * (0.7 + Math.random() * 0.6),
+      pitch: pitch + (i * 0.5 % 3),
+    }))
+  };
+}
+
+function parseSolarData(solarJson, formattedAddress) {
+  const stats = solarJson.solarPotential?.roofSegmentStats || [];
+  const totalArea = stats.reduce((s, seg) => s + (seg.stats?.areaMeters2 || 0), 0);
+  const sqft = totalArea * 10.7639;
+  const avgPitch = stats.length
+    ? stats.reduce((s, seg) => s + (seg.pitchDegrees || 15), 0) / stats.length
+    : 15;
+  const pitchRise = Math.round(Math.tan(avgPitch * Math.PI / 180) * 12 * 10) / 10;
+
+  return {
+    source: 'solar_api',
+    formatted: formattedAddress,
+    sqft: Math.round(sqft),
+    pitch: pitchRise,
+    segments: stats.length,
+    segmentAreas: stats.map(s => ({
+      area: (s.stats?.areaMeters2 || 0) * 10.7639,
+      pitch: s.pitchDegrees || 15,
+    }))
+  };
+}
+
+// ===== COST CALCULATOR =====
+function calcCost(sqft, pitch, materialKey, regionKey) {
+  const mat = MATERIALS[materialKey];
+  const regionMult = REGION_MULT[regionKey] || 1.0;
+  const squares = sqft / 100;
+
+  // Pitch complexity factor
+  const pitchFactor = pitch <= 4 ? 1.0 : pitch <= 7 ? 1.15 : pitch <= 9 ? 1.25 : 1.4;
+
+  const materialCost  = squares * mat.mid * 0.4 * regionMult;
+  const laborCost     = squares * mat.mid * 0.45 * regionMult * pitchFactor;
+  const tearoffCost   = squares * 35 * regionMult;
+  const underlayment  = squares * mat.mid * 0.08 * regionMult;
+  const pitchMarkup   = (pitchFactor - 1) * (materialCost + laborCost);
+
+  const total = materialCost + laborCost + tearoffCost + underlayment + pitchMarkup;
+  const low   = total * 0.80;
+  const high  = total * 1.25;
+
+  return { materialCost, laborCost, tearoffCost, underlayment, pitchMarkup, total, low, high, squares };
+}
+
+// ===== ROOF SVG VISUALIZER =====
+function drawRoofSVG(data) {
+  const svg = document.getElementById('roof-svg');
+  svg.innerHTML = '';
+
+  const W = 340, H = 220;
+  const cx = W / 2, cy = H / 2;
+
+  // Draw stylized roof facets
+  const segs = data.segmentAreas.length || 4;
+  const maxArea = Math.max(...data.segmentAreas.map(s => s.area));
+
+  // Base colors for facets
+  const colors = ['#C4622D','#8B4513','#D4845A','#A0522D','#CD853F','#6B3A2A','#E07845'];
+
+  if (segs === 1) {
+    // Simple gable
+    const pts = `${cx},${cy-70} ${cx-110},${cy+60} ${cx+110},${cy+60}`;
+    const rect = `M${cx-110},${cy+60} L${cx},${cy-70} L${cx+110},${cy+60} Z`;
+    const el = document.createElementNS('http://www.w3.org/2000/svg','path');
+    el.setAttribute('d', rect);
+    el.setAttribute('fill', colors[0]);
+    el.setAttribute('stroke', 'white');
+    el.setAttribute('stroke-width', '2');
+    svg.appendChild(el);
+  } else {
+    // Hip roof style with multiple facets
+    const frontPts = [[cx-120,cy+65],[cx+120,cy+65],[cx+70,cy+20],[cx-70,cy+20]];
+    const backPts  = [[cx-120,cy-65],[cx+120,cy-65],[cx+70,cy-20],[cx-70,cy-20]];
+    const leftPts  = [[cx-120,cy-65],[cx-120,cy+65],[cx-70,cy+20],[cx-70,cy-20]];
+    const rightPts = [[cx+120,cy-65],[cx+120,cy+65],[cx+70,cy+20],[cx-70,cy-20].map((_,i) => i === 2 ? [cx+70,cy+20][1] : _)];
+
+    const facets = [
+      { pts: frontPts, color: colors[0], label: 'Front' },
+      { pts: backPts,  color: colors[1], label: 'Back'  },
+      { pts: leftPts,  color: colors[2], label: 'Left'  },
+      { pts: [[cx+120,cy-65],[cx+120,cy+65],[cx+70,cy+20],[cx+70,cy-20]], color: colors[3], label: 'Right' },
+    ];
+
+    if (segs >= 4) {
+      // Add ridge
+      const ridge = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      ridge.setAttribute('x', cx-70); ridge.setAttribute('y', cy-20);
+      ridge.setAttribute('width', '140'); ridge.setAttribute('height', '40');
+      ridge.setAttribute('fill', colors[4]); ridge.setAttribute('rx', '2');
+      svg.appendChild(ridge);
+    }
+
+    // Draw facets
+    for (const f of facets.slice(0, Math.min(segs, 4))) {
+      const path = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      path.setAttribute('points', f.pts.map(p => p.join(',')).join(' '));
+      path.setAttribute('fill', f.color);
+      path.setAttribute('stroke', 'white');
+      path.setAttribute('stroke-width', '1.5');
+      svg.appendChild(path);
+    }
+  }
+
+  // Pitch indicator
+  const pitchLabel = document.createElementNS('http://www.w3.org/2000/svg','text');
+  pitchLabel.setAttribute('x', '12'); pitchLabel.setAttribute('y', '20');
+  pitchLabel.setAttribute('font-size', '10');
+  pitchLabel.setAttribute('font-family', 'DM Mono, monospace');
+  pitchLabel.setAttribute('fill', '#7A7A72');
+  pitchLabel.textContent = `Pitch: ${data.pitch}/12`;
+  svg.appendChild(pitchLabel);
+
+  const areaLabel = document.createElementNS('http://www.w3.org/2000/svg','text');
+  areaLabel.setAttribute('x', '12'); areaLabel.setAttribute('y', '36');
+  areaLabel.setAttribute('font-size', '10');
+  areaLabel.setAttribute('font-family', 'DM Mono, monospace');
+  areaLabel.setAttribute('fill', '#7A7A72');
+  areaLabel.textContent = `${data.sqft.toLocaleString()} sq ft`;
+  svg.appendChild(areaLabel);
+}
+
+// ===== RENDER RESULTS =====
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+function renderResults(data) {
+  roofData = data;
+
+  document.getElementById('results-address').textContent =
+    data.source === 'demo' ? '⚡ Demo mode — showing simulated data' : '✓ ' + data.formatted;
+  document.getElementById('results-title').textContent =
+    data.source === 'demo' ? 'Simulated Roof Estimate' : 'Satellite Analysis Complete';
+
+  document.getElementById('m-area').textContent    = data.sqft.toLocaleString();
+  document.getElementById('m-pitch').textContent   = data.pitch;
+  document.getElementById('m-segments').textContent = data.segments;
+
+  updateCosts();
+  drawRoofSVG(data);
+  buildMaterialGrid();
+
+  document.getElementById('results').classList.add('active');
+  document.getElementById('disclaimer').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateCosts() {
+  if (!roofData) return;
+  const matKey    = selectedMaterial;
+  const regionKey = document.getElementById('region').value;
+  const costs     = calcCost(roofData.sqft, roofData.pitch, matKey, regionKey);
+
+  document.getElementById('m-squares').textContent  = Math.round(costs.squares);
+  document.getElementById('cost-materials').textContent = fmt(costs.materialCost);
+  document.getElementById('cost-labor').textContent     = fmt(costs.laborCost);
+  document.getElementById('cost-tearoff').textContent   = fmt(costs.tearoffCost);
+  document.getElementById('cost-under').textContent     = fmt(costs.underlayment);
+  document.getElementById('cost-pitch').textContent     = fmt(costs.pitchMarkup);
+  document.getElementById('cost-total').textContent     = fmt(costs.total);
+  document.getElementById('cost-low').textContent       = fmt(costs.low);
+  document.getElementById('cost-high').textContent      = fmt(costs.high);
+
+  // Bars
+  const maxCost = Math.max(costs.materialCost, costs.laborCost, costs.tearoffCost, costs.underlayment, costs.pitchMarkup);
+  const barPct  = v => Math.round((v / maxCost) * 100) + '%';
+  document.getElementById('bar-materials').style.width = barPct(costs.materialCost);
+  document.getElementById('bar-labor').style.width     = barPct(costs.laborCost);
+  document.getElementById('bar-tearoff').style.width   = barPct(costs.tearoffCost);
+  document.getElementById('bar-under').style.width     = barPct(costs.underlayment);
+  document.getElementById('bar-pitch').style.width     = barPct(costs.pitchMarkup);
+}
+
+function buildMaterialGrid() {
+  const grid = document.getElementById('material-grid');
+  grid.innerHTML = '';
+  for (const [key, mat] of Object.entries(MATERIALS)) {
+    const btn = document.createElement('button');
+    btn.className = 'material-option' + (key === selectedMaterial ? ' selected' : '');
+    btn.innerHTML = `
+      <div class="mat-name">${mat.name}</div>
+      <div class="mat-life">${mat.life}</div>
+      <div class="mat-price">$${mat.mid}/sq</div>
+    `;
+    btn.onclick = () => {
+      selectedMaterial = key;
+      document.querySelectorAll('.material-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      updateCosts();
+    };
+    grid.appendChild(btn);
+  }
+}
+
+// ===== PROGRESS BAR =====
+function setProgress(pct, label) {
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('loading-label').textContent = label;
+}
+
+// ===== MAIN FLOW =====
+let coordsVisible = false;
+function toggleCoords() {
+  coordsVisible = !coordsVisible;
+  const panel = document.getElementById('coords-panel');
+  const btn = document.getElementById('coords-toggle-btn');
+  panel.style.display = coordsVisible ? 'block' : 'none';
+  btn.textContent = (coordsVisible ? '▼' : '▶') + ' Skip geocoding — enter coordinates manually';
+}
+function prefillWesterville() {
+  document.getElementById('lat-input').value = '40.1053';
+  document.getElementById('lng-input').value = '-82.8985';
+  document.getElementById('address').value = '3638 Makassar Dr, Westerville, OH 43081';
+}
+
+async function runEstimate() {
+  const address = document.getElementById('address').value.trim();
+  const apiKey  = (window.GOOGLE_MAPS_API_KEY || '').trim();
+  const latRaw  = document.getElementById('lat-input').value.trim();
+  const lngRaw  = document.getElementById('lng-input').value.trim();
+  const useCoords = coordsVisible && latRaw && lngRaw;
+
+  if (!address && !useCoords) {
+    showError('Please enter a street address.');
+    return;
+  }
+
+  const btn = document.getElementById('estimate-btn');
+  btn.disabled = true;
+
+  const loading = document.getElementById('loading-state');
+  loading.classList.add('active');
+  document.getElementById('results').classList.remove('active');
+  document.getElementById('disclaimer').style.display = 'none';
+  document.getElementById('error-box').classList.remove('active');
+  setProgress(10, 'Preparing request...');
+
+  try {
+    let data;
+
+    if (apiKey) {
+      let lat, lng, formatted;
+
+      if (useCoords) {
+        // Skip geocoding, use coords directly
+        lat = parseFloat(latRaw);
+        lng = parseFloat(lngRaw);
+        formatted = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        if (isNaN(lat) || isNaN(lng)) throw new Error('Invalid coordinates — please enter decimal lat/lng like 40.1053 and -82.8985');
+        setProgress(30, 'Using provided coordinates...');
+      } else if (selectedPlace) {
+        // Lat/lng already known from Places Autocomplete — skip geocoding call
+        lat = selectedPlace.lat;
+        lng = selectedPlace.lng;
+        formatted = selectedPlace.formatted;
+        setProgress(30, 'Using selected address...');
+      } else {
+        setProgress(25, 'Geocoding address...');
+        const geo = await geocodeAddress(address, apiKey);
+        lat = geo.lat; lng = geo.lng; formatted = geo.formatted;
+      }
+
+      setProgress(55, 'Fetching satellite roof data...');
+      const solar = await fetchSolarData(lat, lng, apiKey);
+
+      setProgress(85, 'Calculating costs...');
+      data = parseSolarData(solar, formatted);
+
+    } else {
+      // Demo mode
+      setProgress(30, 'Running demo simulation...');
+      await delay(600);
+      setProgress(70, 'Generating roof estimate...');
+      await delay(500);
+      data = generateDemoData(address || 'demo address');
+    }
+
+    selectedMaterial = document.getElementById('material-select').value;
+    setProgress(100, 'Done!');
+    await delay(300);
+
+    loading.classList.remove('active');
+    renderResults(data);
+
+  } catch (err) {
+    loading.classList.remove('active');
+    showError(err.message || 'Something went wrong. Please try again.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  // Split on first dash for title vs detail
+  const dashIdx = msg.indexOf(' — ');
+  if (dashIdx > -1) {
+    const title = msg.slice(0, dashIdx);
+    const detail = msg.slice(dashIdx + 3);
+    box.innerHTML = `<div class="err-title">${title}</div>${detail}<div class="err-tip">💡 Tip: For local file testing, remove all HTTP referrer restrictions from your API key in Google Cloud Console → Credentials. The key only needs "None" or "IP address" restrictions when running from file://.  You can leave demo mode blank to explore the UI without an API key.</div>`;
+  } else {
+    box.innerHTML = `<div class="err-title">Error</div>${msg}`;
+  }
+  box.classList.add('active');
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Allow Enter key on address field
+document.getElementById('address').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runEstimate();
+});
+
+// Material select syncs to selectedMaterial
+document.getElementById('material-select').addEventListener('change', e => {
+  selectedMaterial = e.target.value;
+  if (roofData) { buildMaterialGrid(); updateCosts(); }
+});
+
+// Kick off Maps / Autocomplete once the page is ready
+initMaps();
+</script>
+</body>
+</html>

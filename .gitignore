@@ -1,0 +1,14 @@
+# Environment / secrets — never commit real API keys
+.env
+config.js
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Editor / IDE
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
