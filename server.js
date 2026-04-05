@@ -17,6 +17,11 @@ app.get('/', (req, res) => {
   res.send(html);
 });
 
+// Mirror the Vercel serverless function so local dev works the same way
+app.get('/api/config', (req, res) => {
+  res.json({ apiKey: API_KEY });
+});
+
 // Serve other static assets (fonts, images, etc.) if added later
 app.use(express.static(__dirname));
 

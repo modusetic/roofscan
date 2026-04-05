@@ -1327,8 +1327,22 @@ document.getElementById('material-select').addEventListener('change', e => {
   if (roofData) { buildMaterialGrid(); updateCosts(); }
 });
 
-// Kick off Maps / Autocomplete once the page is ready
-initMaps();
+// Fetch the API key from the server endpoint (Vercel env var or local server.js).
+// Falls back to whatever config.js already set (local file:// usage).
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.apiKey) window.GOOGLE_MAPS_API_KEY = data.apiKey;
+    }
+  } catch {
+    // /api/config unreachable — rely on config.js (local file:// mode)
+  }
+}
+
+// Kick off Maps / Autocomplete once the config is resolved
+loadConfig().then(() => initMaps());
 </script>
 </body>
 </html>
